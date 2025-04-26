@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Handwriting Recognition</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #7f8c8d;
+            margin-bottom: 30px;
+        }
+        #canvas-container {
+            position: relative;
+            margin: 20px auto;
+            background-color: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        #drawing-canvas {
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            cursor: crosshair;
+            background-color: #fff;
+        }
+        #controls {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .button-container {
+            display: flex;
+            gap: 10px;
+        }
+        .tools {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        #clear-btn {
+            background-color: #e74c3c;
+        }
+        #clear-btn:hover {
+            background-color: #c0392b;
+        }
+        .mode-selector {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+            gap: 15px;
+        }
+        .mode-btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 25px;
+            border: 2px solid #3498db;
+            background-color: #fff;
+            color: #3498db;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .mode-btn.active {
+            background-color: #3498db;
+            color: white;
+        }
+        #result-container {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        #prediction {
+            font-size: 72px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 15px 0;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .confidence {
+            margin-top: 10px;
+            color: #7f8c8d;
+        }
+        .recognition-loader {
+            display: none;
+            margin: 10px auto;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        #line-width {
+            width: 100px;
+        }
+        .project-info {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            text-align: left;
+        }
+        .project-info h3 {
+            color: #2c3e50;
+            border-bottom: 1px solid #ecf0f1;
+            padding-bottom: 10px;
+        }
+        .examples {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .example-item {
+            padding: 5px 10px;
+            background-color: #f1f1f1;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>Handwriting Recognition</h1>
+    <p class="subtitle">Draw a character in the canvas below</p>
+    
+    <div class="mode-selector">
+        <button class="mode-btn active" id="digit-mode">Digits (0-9)</button>
+        <button class="mode-btn" id="letter-mode">Letters (A-Z, a-z)</button>
+    </div>
+    
+    <div id="canvas-container">
+        <canvas id="drawing-canvas" width="280" height="280"></canvas>
+        
+        <div id="controls">
+            <div class="tools">
+                <label for="line-width">Line Width:</label>
+                <input type="range" id="line-width" min="5" max="25" value="15">
+                <span id="width-value">15px</span>
+            </div>
+            <div class="button-container">
+                <button id="recognize-btn">Recognize</button>
+                <button id="clear-btn">Clear</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="result-container">
+        <div class="recognition-loader" id="loader"></div>
+        <p>Recognition Result:</p>
+        <div id="prediction">-</div>
+        <div class="confidence" id="confidence"></div>
+    </div>
+
+    <div class="project-info">
+        <h3>About This Project</h3>
+        <p>This handwriting recognition system uses Convolutional Neural Networks (CNNs) to recognize handwritten characters.</p>
+        
+        <p><strong>Current Mode:</strong> <span id="current-mode">Digits (0-9)</span></p>
+        
+        <p>For best results:</p>
+        <ul>
+            <li>Draw a single character that fills most of the canvas</li>
+            <li>Write clearly with defined strokes</li>
+            <li>Center your character in the canvas</li>
+            <li>Select the appropriate mode for the character type you're drawing</li>
+        </ul>
+        
+        <div id="examples-container">
+            <p><strong>Examples you can try:</strong></p>
+            <div class="examples" id="digit-examples">
+                <span class="example-item">0</span>
+                <span class="example-item">1</span>
+                <span class="example-item">2</span>
+                <span class="example-item">3</span>
+                <span class="example-item">4</span>
+                <span class="example-item">5</span>
+                <span class="example-item">6</span>
+                <span class="example-item">7</span>
+                <span class="example-item">8</span>
+                <span class="example-item">9</span>
+            </div>
+            <div class="examples" id="letter-examples" style="display: none;">
+                <span class="example-item">A</span>
+                <span class="example-item">B</span>
+                <span class="example-item">C</span>
+                <span class="example-item">X</span>
+                <span class="example-item">Y</span>
+                <span class="example-item">Z</span>
+                <span class="example-item">a</span>
+                <span class="example-item">b</span>
+                <span class="example-item">c</span>
+                <span class="example-item">x</span>
+                <span class="example-item">y</span>
+                <span class="example-item">z</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const canvas = document.getElementById('drawing-canvas');
+            const ctx = canvas.getContext('2d');
+            const recognizeBtn = document.getElementById('recognize-btn');
+            const clearBtn = document.getElementById('clear-btn');
+            const prediction = document.getElementById('prediction');
+            const confidenceDisplay = document.getElementById('confidence');
+            const loader = document.getElementById('loader');
+            const lineWidth = document.getElementById('line-width');
+            const widthValue = document.getElementById('width-value');
+            const digitModeBtn = document.getElementById('digit-mode');
+            const letterModeBtn = document.getElementById('letter-mode');
+            const currentModeDisplay = document.getElementById('current-mode');
+            const digitExamples = document.getElementById('digit-examples');
+            const letterExamples = document.getElementById('letter-examples');
+            
+            let isDrawing = false;
+            let currentMode = 'digit'; // Default mode
+            
+            // Set up the canvas for drawing
+            ctx.lineWidth = 15;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = 'black';
+            
+            // Fill with white background
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Line width adjustment
+            lineWidth.addEventListener('input', function() {
+                ctx.lineWidth = this.value;
+                widthValue.textContent = this.value + 'px';
+            });
+            
+            // Mode selection
+            digitModeBtn.addEventListener('click', function() {
+                digitModeBtn.classList.add('active');
+                letterModeBtn.classList.remove('active');
+                currentMode = 'digit';
+                currentModeDisplay.textContent = 'Digits (0-9)';
+                digitExamples.style.display = 'flex';
+                letterExamples.style.display = 'none';
+            });
+            
+            letterModeBtn.addEventListener('click', function() {
+                letterModeBtn.classList.add('active');
+                digitModeBtn.classList.remove('active');
+                currentMode = 'letter';
+                currentModeDisplay.textContent = 'Letters (A-Z, a-z)';
+                digitExamples.style.display = 'none';
+                letterExamples.style.display = 'flex';
+            });
+            
+            // Drawing event listeners
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseout', stopDrawing);
+            
+            // Touch support
+            canvas.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                startDrawing(getTouch(e));
+            });
+            canvas.addEventListener('touchmove', function(e) {
+                e.preventDefault();
+                draw(getTouch(e));
+            });
+            canvas.addEventListener('touchend', function(e) {
+                e.preventDefault();
+                stopDrawing();
+            });
+            
+            function getTouch(e) {
+                const rect = canvas.getBoundingClientRect();
+                const touch = e.touches[0];
+                return {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                };
+            }
+            
+            function startDrawing(e) {
+                isDrawing = true;
+                const rect = canvas.getBoundingClientRect();
+                ctx.beginPath();
+                ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top);
+            }
+            
+            function draw(e) {
+                if (!isDrawing) return;
+                
+                const rect = canvas.getBoundingClientRect();
+                ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+                ctx.stroke();
+            }
+            
+            function stopDrawing() {
+                isDrawing = false;
+            }
+            
+            // Clear the canvas
+            clearBtn.addEventListener('click', function() {
+                ctx.fillStyle = 'white';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                prediction.textContent = '-';
+                confidenceDisplay.textContent = '';
+            });
+            
+            // Recognize the handwriting
+            recognizeBtn.addEventListener('click', function() {
+                // Show loading indicator
+                loader.style.display = 'block';
+                prediction.textContent = '';
+                confidenceDisplay.textContent = '';
+                
+                // Get the image data
+                const imageData = canvas.toDataURL('image/png');
+                
+                // Send to backend API with mode information
+                fetch('/recognize', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        image: imageData,
+                        mode: currentMode
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    loader.style.display = 'none';
+                    prediction.textContent = data.prediction;
+                    confidenceDisplay.textContent = `Confidence: ${data.confidence.toFixed(2)}%`;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    loader.style.display = 'none';
+                    prediction.textContent = 'Error';
+                    confidenceDisplay.textContent = 'Could not process image';
+                });
+            });
+        });
+    </script>
+</body>
+</html>
