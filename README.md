@@ -21,7 +21,7 @@ Built with a CNN trained on the English Handwritten Characters Dataset.
 - **Frontend:** HTML, CSS, JavaScript (AJAX for requests)
 - **Backend:** Python Flask
 - **Model:** Convolutional Neural Network (Keras)
-- **Dataset:** [English Handwritten Characters Dataset](https://www.kaggle.com/datasets/dhruvildave/english-handwritten-characters-dataset)
+- **Dataset:** [Click to download English Handwritten Characters Dataset](https://www.kaggle.com/datasets/dhruvildave/english-handwritten-characters-dataset)
 
 ---
 
